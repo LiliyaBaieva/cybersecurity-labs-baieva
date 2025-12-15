@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Захищена Система Пошуку Студентів</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.11.3/brython.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fff4; /* Легкий зелений фон */
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 24px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.2);
+            border: 3px solid #34d399; /* Зелена рамка */
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #a7f3d0;
+        }
+        th {
+            background-color: #d1fae5;
+            font-weight: 700;
+            color: #065f46;
+        }
+        .secret-pin-cell {
+            background-color: #f0fff4;
+            color: #10b981;
+            font-weight: 700;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body onload="brython()" class="p-4">
+    <div class="container">
+        <!-- Заголовки без попереджень про безпеку -->
+        <h1 class="text-3xl font-bold text-center mb-6 text-green-700">СИСТЕМА ПОШУКУ СТУДЕНТІВ (ЗАХИЩЕНА)</h1>
+        
+        <!-- Видалено блоки status-box та пояснення payload -->
+
+        <div class="flex space-x-4 mb-6">
+            <input type="text" id="search-query" placeholder="Введіть ім'я або групу для пошуку..." class="flex-grow p-3 border border-green-400 rounded-lg focus:ring-green-500 focus:border-green-500" value="">
+            <button id="btn-search" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition duration-200 shadow-lg shadow-green-300">
+                🔍 Пошук
+            </button>
+        </div>
+
+        <!-- Результати Пошуку -->
+        <h2 class="text-2xl font-semibold mt-8 mb-4">Результати:</h2>
+        <div id="results-container" class="overflow-x-auto rounded-lg shadow-xl border border-gray-100">
+            <p id="no-results" class="p-4 text-center text-gray-500">Введіть запит для пошуку студентів.</p>
+        </div>
+
+    </div>
+
+    <!-- Python Logic (SECURE) -->
+    <script type="text/python">
+        from browser import document, html, bind
+        
+        # Імітація Бази Даних (in-memory list)
+        DB_TABLE = [
+            {"id": 1, "name": "Іван Петренко", "group_id": "КБ-401", "secret_pin": "0001 - Звичайний студент"},
+            {"id": 2, "name": "Олена Коваль", "group_id": "КБ-402", "secret_pin": "0002 - Звичайний студент"},
+            {"id": 3, "name": "Адмін Секретар", "group_id": "КБ-ADMIN", "secret_pin": "9999 - КОНФІДЕНЦІЙНИЙ PIN АДМІНА"},
+            {"id": 4, "name": "Марина Ткач", "group_id": "КБ-401", "secret_pin": "0004 - Звичайний студент"},
+            {"id": 5, "name": "Олег Шевчук", "group_id": "КБ-403", "secret_pin": "0005 - Звичайний студент"},
+            {"id": 6, "name": "Петро Іванов", "group_id": "КБ-402", "secret_pin": "0006 - Звичайний студент"},
+            {"id": 7, "name": "Катерина Лисенко", "group_id": "КБ-403", "secret_pin": "0007 - Звичайний студент"},
+        ]
+        
+        COLUMN_NAMES = ["id", "name", "group_id", "secret_pin"]
+
+        # ----------------------------------------------------
+        # 2. ЗАХИЩЕНИЙ Функціонал Пошуку (Імітація параметризації)
+        # ----------------------------------------------------
+
+        def perform_secure_search(query_input):
+            """
+            Виконує пошук, імітуючи параметризований запит.
+            Вхідні дані (query_input) завжди розглядаються як ЛІТЕРАЛЬНИЙ рядок.
+            """
+            
+            # --- ЗАХИЩЕНА ЧАСТИНА: Вхідні дані розглядаються як рядок ---
+            print(f"Виконується ЗАХИЩЕНИЙ пошук для: {query_input}")
+            
+            # Функція фільтрації, яка шукає ВХІДНИЙ РЯДОК (включно з апострофами та ін.)
+            # як частину імені або групи.
+            query_lower = query_input.lower()
+            results = [
+                row for row in DB_TABLE 
+                if query_lower in row["name"].lower() or query_lower in row["group_id"].lower()
+            ]
+            
+            return results
+
+        # ----------------------------------------------------
+        # 3. Управління Інтерфейсом
+        # ----------------------------------------------------
+        
+        def render_results(results_list):
+            """Відображає результати у HTML-таблиці."""
+            results_container = document["results-container"]
+            results_container.html = "" # Очищення
+
+            if not results_list:
+                results_container <= html.P("Нічого не знайдено.", Class="p-4 text-center text-gray-500")
+                return
+
+            # Створення таблиці
+            table = html.TABLE(Class="min-w-full divide-y divide-green-200")
+            
+            # Створення заголовків
+            thead = html.THEAD()
+            header_row = html.TR()
+            
+            for col in COLUMN_NAMES:
+                header_row <= html.TH(col.replace('_', ' ').title(), scope="col", Class="px-6 py-3 text-xs font-medium tracking-wider uppercase")
+            
+            thead <= header_row
+            table <= thead
+
+            # Створення тіла таблиці
+            tbody = html.TBODY(Class="bg-white divide-y divide-gray-200")
+            
+            for row_data in results_list:
+                row = html.TR(Class="hover:bg-green-50")
+                
+                for col_name in COLUMN_NAMES:
+                    cell_data = row_data.get(col_name)
+                    cell_class = ""
+                    if col_name == "secret_pin":
+                        cell_class = "secret-pin-cell"
+                    
+                    row <= html.TD(str(cell_data), className=f"px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 {cell_class}")
+                
+                tbody <= row
+            
+            table <= tbody
+            results_container <= table
+        
+        @bind(document["btn-search"], "click")
+        def on_search_click(event):
+            """Обробник натискання кнопки Пошук."""
+            query = document["search-query"].value
+            
+            if not query:
+                render_results([])
+                return
+
+            results = perform_secure_search(query)
+            render_results(results)
+        
+    </script>
+</body>
+</html>
